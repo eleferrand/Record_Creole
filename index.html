@@ -57,32 +57,37 @@ fetch(SCRIPT_URL)
     document.getElementById('stop').onclick = () => mediaRecorder.stop();
 
     async function upload() {
-      const status = document.getElementById('status');
-      status.innerText = "Uploading...";
-    
-      const blob = new Blob(chunks, { type: 'audio/webm' });
-      const reader = new FileReader();
-      reader.readAsDataURL(blob);
-      
-      reader.onloadend = () => {
-        const base64 = reader.result.split(',')[1];
-    
-        // We MUST use URLSearchParams to ensure the browser sees this 
-        // as a "Simple Form Submission" which bypasses CORS.
-        const formData = new URLSearchParams();
-        formData.append('base64', base64);
-        formData.append('caption', currentCaption);
-    
-        // We do NOT use 'await' here because 'no-cors' doesn't return a readable response
-        fetch(SCRIPT_URL, {
-          method: 'POST',
-          mode: 'no-cors', 
-          cache: 'no-cache',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-          },
-          body: formData.toString()
-        });
+  const status = document.getElementById('status');
+  status.innerText = "Uploading...";
+
+  const blob = new Blob(chunks, { type: 'audio/webm' });
+  const reader = new FileReader();
+  reader.readAsDataURL(blob);
+  
+  reader.onloadend = () => {
+    const base64 = reader.result.split(',')[1];
+
+    // We wrap everything in a simple fetch
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors', // Tells the browser: "Don't check for CORS, just send it"
+      headers: {
+        'Content-Type': 'text/plain' // This is the secret to avoiding the "Preflight" block
+      },
+      body: JSON.stringify({
+        base64: base64,
+        caption: currentCaption
+      })
+    });
+
+    // Because 'no-cors' is a "blind" request, we can't wait for a response.
+    // We just show a success message after a short delay.
+    status.innerText = "Sent! Check Drive in 5 seconds...";
+    setTimeout(() => {
+        location.reload();
+    }, 3000);
+  };
+}
     
         // Since we can't 'read' the success from Google, we assume it's working
         // and wait 3 seconds before refreshing.
