@@ -26,8 +26,8 @@
     </div>
 
     <audio id="audioPlayback" controls style="display:none;"></audio>
-    <button id="uploadBtn" style="margin-top:20px; background:green; color:white;">Validate Batch</button>
-    <div id="status">Ready</div>
+    <!-- <button id="uploadBtn" style="margin-top:20px; background:green; color:white;">Upload Batch to Drive</button> -->
+    <!-- <div id="status">Ready</div> -->
 </div>
 
 
@@ -46,7 +46,7 @@
         document.getElementById('stopBtn').onclick = stopRecording;
         document.getElementById('retryBtn').onclick = retryRecording;
         document.getElementById('nextBtn').onclick = nextCaption;
-        document.getElementById('uploadBtn').onclick = uploadBatch;
+        // document.getElementById('uploadBtn').onclick = uploadBatch;
     });
 
     // --- 3. CHARGEMENT DU CSV LOCAL ---
@@ -84,7 +84,7 @@ async function startRecording() {
             reader.readAsDataURL(blob);
             reader.onloadend = () => {
                 batch.set(currentIndex, reader.result.split(',')[1]);
-                document.getElementById('status').innerText = "Enregistré dans le batch.";
+                // document.getElementById('status').innerText = "Enregistré dans le batch.";
             };
         };
 
@@ -154,21 +154,57 @@ async function startRecording() {
         document.getElementById('audioPlayback').style.display = 'none';
         document.getElementById('recordBtn').disabled = false;
         document.getElementById('retryBtn').disabled = true;
-        document.getElementById('status').innerText = "Effacé. Tu peux recommencer.";
+        // document.getElementById('status').innerText = "Effacé. Tu peux recommencer.";
     }
 
-    function nextCaption() {
+    async function nextCaption() {
+        const recordingToUpload = batch.get(currentIndex);
+
+        if (recordingToUpload) {
+            // We trigger the upload but DON'T use 'await' here 
+            // so the UI changes to the next caption immediately!
+            uploadSilently(recordingToUpload, captions[currentIndex]);
+            
+            // Remove from memory once we've started the upload
+            batch.delete(currentIndex);
+        }
+
+        // Move to the next prompt
         currentIndex++;
+        
         if (currentIndex < captions.length) {
             document.getElementById('caption-display').innerText = captions[currentIndex];
+            // Reset UI for the new recording
             document.getElementById('nextBtn').disabled = true;
             document.getElementById('recordBtn').disabled = false;
+            document.getElementById('retryBtn').disabled = true;
             document.getElementById('audioPlayback').style.display = 'none';
+            // document.getElementById('status').innerText = "Ready for next recording.";
         } else {
-            document.getElementById('caption-display').innerText = "C'est fini !";
+            document.getElementById('caption-display').innerText = "All done! Thank you.";
+            document.getElementById('recordBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'none';
         }
     }
 
+    // --- HELPER FUNCTION FOR SILENT UPLOAD ---
+    async function uploadSilently(b64, captionText) {
+        const fd = new URLSearchParams();
+        fd.append('base64', b64);
+        fd.append('caption', captionText);
+        fd.append('user', sessionId);
+
+        try {
+            console.log("Uploading in background...");
+            const response = await fetch("https://script.google.com/macros/s/AKfycbz691bwuH3TqN6kOqrbgUwcsebCxxUET8eO2EtKXoW5HkBMop5vnigyrrE6dfC6q5KkZA/exec", { method: 'POST', body: fd });
+            if (response.ok) {
+                console.log("Upload successful for: " + captionText);
+            }
+        } catch (e) {
+            console.error("Background upload failed:", e);
+            // Optional: you could save failed uploads to a 'retry' list here
+        }
+    }
     // --- 5. UPLOAD (Vers ton script Google) ---
     async function uploadBatch() {
         document.getElementById('status').innerText = "Envoi en cours...";
