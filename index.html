@@ -220,7 +220,7 @@ async function startRecording() {
 
         try {
             console.log("Uploading in background...");
-            const response = await fetch("https://script.google.com/macros/s/AKfycbz691bwuH3TqN6kOqrbgUwcsebCxxUET8eO2EtKXoW5HkBMop5vnigyrrE6dfC6q5KkZA/exec", { method: 'POST', body: fd });
+            const response = await fetch("https://script.google.com/macros/s/AKfycbz691bwuH3TqN6kOqrbgUwcsebCxxUET8eO2EtKXoW5HkBMop5vnigyrrE6dfC6q5KkZA/exec", { method: 'POST',mode: 'no-cors', body: fd });
             if (response.ok) {
                 console.log("Upload successful for: " + captionText);
             }
