@@ -238,7 +238,7 @@ async function startRecording() {
             fd.append('caption', captions[idx]);
             fd.append('user', sessionId);
             try {
-                await fetch("https://script.google.com/macros/s/AKfycbz691bwuH3TqN6kOqrbgUwcsebCxxUET8eO2EtKXoW5HkBMop5vnigyrrE6dfC6q5KkZA/exec", { method: 'POST', body: fd });
+                await fetch("https://script.google.com/macros/s/AKfycbz691bwuH3TqN6kOqrbgUwcsebCxxUET8eO2EtKXoW5HkBMop5vnigyrrE6dfC6q5KkZA/exec", { method: 'POST',mode: 'no-cors', body: fd });
             } catch (e) { console.error("Erreur upload", e); }
         }
         alert("Batch envoyé !");
